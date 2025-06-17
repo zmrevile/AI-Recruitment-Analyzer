@@ -30,4 +30,5 @@ class InterviewSession:
         self.question_count = 0
         self.created_at = datetime.now()
         self.follow_up_count = 0  # 当前话题的连续追问次数
-        self.last_topic = ""      # 上一个话题，用于判断是否换话题 
+        self.last_topic = ""      # 上一个话题，用于判断是否换话题
+        self.current_is_follow_up = False  # 当前问题是否为追问 

@@ -21,13 +21,13 @@ interview_sessions: Dict[str, InterviewSession] = {}
 enhanced_generator = None
 
 
-@router.post("/start", response_model=InterviewResponse)
+@router.post("/start")
 async def start_interview():
     """
     开始面试会话（基于匹配度分析）
     
     Returns:
-        第一个面试问题和会话信息
+        第一个面试问题内容
     """
     global enhanced_generator, interview_sessions
     
@@ -72,27 +72,26 @@ async def start_interview():
         session.conversation_history.append(HumanMessage(content=first_question))
         session.question_count += 1
         
-        # 增强返回信息，包含匹配度信息
+        # 增强候选人信息，包含匹配度信息（保留在session中，但不返回）
         enhanced_candidate_info = {
             **candidate_info,
             "match_score": current_match_report.get("total_score", 0),
             "match_level": current_match_report.get("match_level", "未知"),
             "job_title": job_info.get("job_title", "AI算法工程师")
         }
+        session.candidate_info = enhanced_candidate_info
         
-        return InterviewResponse(
-            question=first_question,
-            session_id=session_id,
-            candidate_info=enhanced_candidate_info,
-            question_round=session.question_count,
-            is_follow_up=False
-        )
+        # 第一个问题不是追问
+        session.current_is_follow_up = False
+        
+        # 只返回问题内容
+        return first_question
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"面试启动失败: {str(e)}")
 
 
-@router.post("/answer", response_model=InterviewResponse)
+@router.post("/answer")
 async def submit_answer(interview_msg: InterviewMessage):
     """
     提交回答并获取下一个问题
@@ -101,7 +100,7 @@ async def submit_answer(interview_msg: InterviewMessage):
         interview_msg: 包含回答内容和会话ID的消息
         
     Returns:
-        下一个面试问题
+        下一个面试问题内容
     """
     global enhanced_generator
     
@@ -176,13 +175,11 @@ async def submit_answer(interview_msg: InterviewMessage):
         # 添加新问题到对话历史
         session.conversation_history.append(HumanMessage(content=next_question))
         
-        return InterviewResponse(
-            question=next_question,
-            session_id=session.session_id,
-            candidate_info=session.candidate_info,
-            question_round=session.question_count,
-            is_follow_up=is_follow_up
-        )
+        # 保留追问状态和轮次信息在session中（但不返回）
+        session.current_is_follow_up = is_follow_up
+        
+        # 只返回问题内容
+        return next_question
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"处理回答失败: {str(e)}")

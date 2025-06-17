@@ -1,5 +1,3 @@
-# 🤖 AI智能面试系统 4.0 - 星火版
-
 基于星火大模型的智能面试系统，支持简历分析、岗位匹配和个性化面试问题生成。
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
@@ -72,8 +70,6 @@ langchain/
 │       └── json_helper.py   # JSON处理工具
 │
 ├── data/                    # 📂 数据文件
-│   ├── job_requirement_ai_engineer.txt
-│   └── 简历_王以利.pdf
 │
 ├── tests/                   # 🧪 测试模块
 │   ├── __init__.py
@@ -95,8 +91,6 @@ cd langchain
 # 安装依赖
 pip install -r requirements.txt
 
-# 配置API密钥
-# 编辑 app/config/settings.py 文件，填入你的星火大模型API密钥
 ```
 
 ### 2. 配置星火大模型
@@ -162,8 +156,8 @@ print(f"匹配度: {match_result['match_report']['total_score']:.3f}")
 
 # 4. 开始面试
 response = requests.post('http://localhost:8000/api/interview/start')
-interview_data = response.json()
-print(f"第一个问题: {interview_data['question']}")
+first_question = response.json()
+print(f"第一个问题: {first_question}")
 ```
 
 ## 🔧 技术特性

@@ -237,32 +237,39 @@ analyzeMatch().then(data => {
 ```
 
 ### 5. 🎙️ 面试管理
+
+> **⚠️ 重要变更说明**: 
+> 从v2.0版本开始，面试相关接口返回格式已简化：
+> - `/api/interview/start` 现在直接返回问题字符串而不是包含多个字段的对象
+> - `/api/interview/answer` 同样直接返回下一个问题字符串
+> - 会话信息(session_id等)在后端自动维护，可通过 `/api/interview/sessions` 获取
+
 ```javascript
 /**
  * 开始面试会话
- * @returns {Promise<Object>} 面试开始结果
+ * @returns {Promise<string>} 第一个面试问题
  */
 async function startInterview() {
-    const result = await apiPost('/api/interview/start');
-    console.log('面试开始:', result);
-    return result;
+    const question = await apiPost('/api/interview/start');
+    console.log('面试开始，第一个问题:', question);
+    return question;
 }
 
 /**
  * 提交面试回答
  * @param {string} sessionId - 面试会话ID
  * @param {string} answer - 候选人回答
- * @returns {Promise<Object>} 下个问题或面试结果
+ * @returns {Promise<string>} 下一个面试问题
  */
 async function submitAnswer(sessionId, answer) {
     const data = {
         session_id: sessionId,
-        answer: answer
+        message: answer  // 注意：字段名是message，不是answer
     };
     
-    const result = await apiPost('/api/interview/answer', data);
-    console.log('回答提交成功:', result);
-    return result;
+    const nextQuestion = await apiPost('/api/interview/answer', data);
+    console.log('回答提交成功，下一个问题:', nextQuestion);
+    return nextQuestion;
 }
 
 /**
@@ -279,13 +286,12 @@ async function getInterviewHistory(sessionId) {
 // 使用示例
 let currentSessionId = null;
 
-startInterview().then(data => {
-    currentSessionId = data.session_id;
-    console.log(`✅ 面试开始 (会话ID: ${currentSessionId})`);
-    console.log(`🤖 面试官: ${data.question}`);
+startInterview().then(question => {
+    console.log(`✅ 面试开始`);
+    console.log(`🤖 面试官: ${question}`);
     
     // 这里可以显示问题给用户
-    displayQuestion(data.question);
+    displayQuestion(question);
 }).catch(error => {
     console.error('❌ 面试开始失败:', error);
 });
@@ -325,13 +331,17 @@ class InterviewSystem {
             
             // 5. 开始面试
             console.log('🎙️ 开始面试...');
-            const interviewResult = await this.startInterview();
-            this.sessionId = interviewResult.session_id;
+            const firstQuestion = await this.startInterview();
+            
+            // 注意：session_id现在需要通过其他方式管理
+            // 可以通过获取面试会话列表来找到当前会话ID
+            const sessions = await this.getActiveSessions();
+            this.sessionId = sessions.sessions[sessions.sessions.length - 1]?.session_id;
             
             console.log('✅ 面试系统准备就绪！');
             return {
                 sessionId: this.sessionId,
-                firstQuestion: interviewResult.question,
+                firstQuestion: firstQuestion,
                 matchResult: matchResult
             };
             
@@ -350,7 +360,7 @@ class InterviewSystem {
         }
         
         try {
-            const result = await submitAnswer(this.sessionId, answer);
+            const nextQuestion = await submitAnswer(this.sessionId, answer);
             
             // 记录对话历史
             this.interviewHistory.push({
@@ -359,23 +369,23 @@ class InterviewSystem {
                 timestamp: new Date()
             });
             
-            if (result.question) {
+            if (nextQuestion && typeof nextQuestion === 'string') {
                 this.interviewHistory.push({
                     type: 'question',
-                    content: result.question,
+                    content: nextQuestion,
                     timestamp: new Date()
                 });
                 
                 return {
                     hasNextQuestion: true,
-                    question: result.question,
-                    isFollowUp: result.is_follow_up || false
+                    question: nextQuestion,
+                    isFollowUp: false  // 追问状态信息现在在后端维护
                 };
             } else {
-                // 面试结束
+                // 面试结束（如果返回空或非字符串）
                 return {
                     hasNextQuestion: false,
-                    summary: result.interview_summary || '面试已完成',
+                    summary: '面试已完成',
                     history: this.interviewHistory
                 };
             }
@@ -416,6 +426,10 @@ class InterviewSystem {
     
     async startInterview() {
         return await startInterview();
+    }
+    
+    async getActiveSessions() {
+        return await apiGet('/api/interview/sessions');
     }
     
     displayMatchResult(matchResult) {
