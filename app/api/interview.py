@@ -3,10 +3,9 @@
 """
 from fastapi import APIRouter, HTTPException
 from typing import Dict
-import uuid
 from datetime import datetime
 from langchain_core.messages import HumanMessage, AIMessage
-from app.models.interview import InterviewMessage, InterviewResponse, InterviewSession
+from app.models.interview import InterviewMessage, InterviewResponse, InterviewSession, InterviewStartRequest
 from app.config.settings import get_spark_config
 from app.services.enhanced_interview_generator import EnhancedInterviewGenerator
 from app.api.resume import get_resume_analyzer
@@ -22,14 +21,21 @@ enhanced_generator = None
 
 
 @router.post("/start")
-async def start_interview():
+async def start_interview(request: InterviewStartRequest):
     """
     开始面试会话（基于匹配度分析）
+    
+    Args:
+        request: 包含session_id的请求对象
     
     Returns:
         第一个面试问题内容
     """
     global enhanced_generator, interview_sessions
+    
+    # 检查session_id是否已存在
+    if request.session_id in interview_sessions:
+        raise HTTPException(status_code=400, detail=f"会话ID {request.session_id} 已存在")
     
     resume_analyzer = get_resume_analyzer()
     job_analyzer = get_job_analyzer()
@@ -49,8 +55,8 @@ async def start_interview():
         if enhanced_generator is None:
             enhanced_generator = EnhancedInterviewGenerator(get_spark_config())
         
-        # 创建新的面试会话
-        session_id = str(uuid.uuid4())
+        # 使用传入的session_id创建新的面试会话
+        session_id = request.session_id
         candidate_info = resume_analyzer.get_candidate_info()
         job_info = job_analyzer.get_job_info()
         

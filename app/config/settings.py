@@ -6,8 +6,8 @@ import os
 # LangSmith 配置
 LANGSMITH_CONFIG = {
     "LANGCHAIN_TRACING_V2": "true",
-    "LANGCHAIN_API_KEY": "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",
-    "LANGCHAIN_PROJECT": "interview-analysis"
+    "LANGCHAIN_API_KEY": "",
+    "LANGCHAIN_PROJECT": ""
 }
 
 # 星火大模型配置 - 使用Spark 4.0 Ultra版本

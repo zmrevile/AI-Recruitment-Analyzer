@@ -12,6 +12,11 @@ class InterviewMessage(BaseModel):
     session_id: Optional[str] = None
 
 
+class InterviewStartRequest(BaseModel):
+    """开始面试请求模型"""
+    session_id: str
+
+
 class InterviewResponse(BaseModel):
     """面试响应模型"""
     question: str
