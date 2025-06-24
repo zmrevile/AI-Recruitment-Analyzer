@@ -108,12 +108,15 @@ class ResumeAnalyzer:
             # 分割文本
             chunks = self.text_splitter.split_text(resume_text)
             
-            # 创建Chroma向量存储
+            # 创建Chroma向量存储，使用新的collection名称避免维度冲突
             persist_directory = "./chroma_db"
+            collection_name = "resume_collection_v2"  # 新的collection名称
+            
             self.vector_store = Chroma.from_texts(
                 texts=chunks,
                 embedding=self.embeddings,
-                persist_directory=persist_directory
+                persist_directory=persist_directory,
+                collection_name=collection_name
             )
             
             return True
