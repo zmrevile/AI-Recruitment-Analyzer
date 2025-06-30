@@ -20,6 +20,10 @@ SPARK_CONFIG = {
     "model_name": "Spark 4.0 Ultra"  # 模型名称
 }
 
+def get_spark_config():
+    """获取星火大模型配置（用于LLM，不含embedding）"""
+    return SPARK_CONFIG
+
 def setup_langsmith():
     """设置LangSmith环境变量"""
     for key, value in LANGSMITH_CONFIG.items():
@@ -27,10 +31,6 @@ def setup_langsmith():
     print("✅ LangSmith追踪已启用")
     print(f"📊 项目名称: {LANGSMITH_CONFIG['LANGCHAIN_PROJECT']}")
     print(f"🔗 访问 https://smith.langchain.com/ 查看追踪数据")
-
-def get_spark_config():
-    """获取星火大模型配置"""  
-    return SPARK_CONFIG
 
 def get_openai_key():
     """为了兼容性保留，实际返回空字符串"""

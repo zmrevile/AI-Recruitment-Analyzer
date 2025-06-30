@@ -17,11 +17,7 @@ from app.utils.json_helper import JSONHelper
 class JobAnalyzer:
     def __init__(self, spark_config: Dict):
         self.spark_config = spark_config
-        self.embeddings = SparkEmbeddings(
-            app_id=spark_config.get("app_id", ""),
-            api_key=spark_config.get("api_key", ""),
-            api_secret=spark_config.get("api_secret", "")
-        )
+        self.embeddings = SparkEmbeddings()
         self.llm = SparkLLM(
             app_id=spark_config.get("app_id", ""),
             api_key=spark_config.get("api_key", ""),

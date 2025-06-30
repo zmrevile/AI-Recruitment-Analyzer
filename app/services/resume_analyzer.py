@@ -16,11 +16,7 @@ from app.utils.logger import resume_analyzer_logger
 class ResumeAnalyzer:
     def __init__(self, spark_config: Dict):
         self.spark_config = spark_config
-        self.embeddings = SparkEmbeddings(
-            app_id=spark_config.get("app_id", ""),
-            api_key=spark_config.get("api_key", ""),
-            api_secret=spark_config.get("api_secret", "")
-        )
+        self.embeddings = SparkEmbeddings()  # 现在使用本地模型，无需配置
         self.llm = SparkLLM(
             app_id=spark_config.get("app_id", ""),
             api_key=spark_config.get("api_key", ""),
