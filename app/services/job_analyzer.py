@@ -35,14 +35,7 @@ class JobAnalyzer:
         self.job_content = ""
         self.structured_job_data = {}
         
-    def load_job_requirement(self, file_path: str) -> str:
-        """从文件中加载岗位要求"""
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except Exception as e:
-            job_analyzer_logger.error(f"岗位要求文件加载失败: {e}")
-            return ""
+
     
     def extract_structured_job_info(self, job_text: str) -> Dict:
         """使用LLM提取结构化的岗位信息"""
@@ -141,11 +134,13 @@ class JobAnalyzer:
             job_analyzer_logger.error(f"岗位要求检索失败: {e}")
             return []
     
-    def process_job_requirement(self, file_path: str) -> bool:
-        """处理岗位要求文件"""
+
+    
+    def process_job_content(self, job_content: str) -> bool:
+        """直接处理岗位要求内容"""
         try:
-            # 1. 加载岗位要求文件
-            self.job_content = self.load_job_requirement(file_path)
+            # 1. 保存岗位内容
+            self.job_content = job_content
             if not self.job_content:
                 return False
             

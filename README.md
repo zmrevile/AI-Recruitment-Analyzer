@@ -54,18 +54,19 @@ python main.py
 
 ### 4. 体验AI面试
 
+准备好你的PDF简历和TXT格式岗位要求文件，然后：
+
 ```bash
 python tests/interactive_interview_test.py
 ```
 
 ## 📋 使用流程
 
-1. **📄 简历上传**: 上传PDF格式简历
-2. **💼 岗位配置**: 加载岗位要求（默认AI工程师岗位）
-3. **🔍 匹配分析**: 智能计算简历与岗位的匹配度
-4. **🎙️ 开始面试**: 基于匹配结果生成个性化面试问题
-5. **💬 互动问答**: 与AI面试官进行真实对话
-6. **📊 面试总结**: 获得完整的面试记录和分析
+1. **📄 文件上传**: 同时上传PDF格式简历和TXT格式岗位要求文件
+2. **🔍 匹配分析**: 智能计算简历与岗位的匹配度
+3. **🎙️ 开始面试**: 基于匹配结果生成个性化面试问题
+4. **💬 互动问答**: 与AI面试官进行真实对话
+5. **📊 面试总结**: 获得完整的面试记录和分析
 
 ## 📡 API接口说明
 
@@ -74,8 +75,7 @@ python tests/interactive_interview_test.py
 | 端点 | 方法 | 功能 | 说明 |
 |------|------|------|------|
 | `/health` | GET | 健康检查 | 检查服务状态 |
-| `/api/resume/upload` | POST | 上传简历 | 支持PDF格式 |
-| `/api/job/upload-requirement` | POST | 加载岗位要求 | 默认AI工程师岗位 |
+| `/upload` | POST | 上传文件 | 同时上传PDF简历和TXT岗位要求 |
 | `/api/match/analyze` | POST | 匹配度分析 | 智能匹配算法 |
 | `/api/interview/start` | POST | 开始面试 | 创建面试会话 |
 | `/api/interview/answer` | POST | 提交回答 | 获取下一个问题 |
@@ -102,12 +102,13 @@ async function apiPost(endpoint, data = null) {
     return await response.json();
 }
 
-// 文件上传
-async function uploadResume(file) {
+// 同时上传简历和岗位要求文件
+async function uploadFiles(resumeFile, jobFile) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('resume_file', resumeFile);
+    formData.append('job_file', jobFile);
     
-    const response = await fetch(`${API_BASE_URL}/api/resume/upload`, {
+    const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         body: formData
     });
@@ -120,22 +121,20 @@ async function completeInterviewFlow() {
         // 1. 检查服务状态
         await apiGet('/health');
         
-        // 2. 上传简历
-        const file = document.getElementById('resumeFile').files[0];
-        await uploadResume(file);
+        // 2. 同时上传简历和岗位要求文件
+        const resumeFile = document.getElementById('resumeFile').files[0];
+        const jobFile = document.getElementById('jobFile').files[0];
+        await uploadFiles(resumeFile, jobFile);
         
-        // 3. 加载岗位要求
-        await apiPost('/api/job/upload-requirement');
-        
-        // 4. 分析匹配度
+        // 3. 分析匹配度
         const matchResult = await apiPost('/api/match/analyze');
         console.log(`匹配度: ${matchResult.match_report.total_score}`);
         
-        // 5. 开始面试
+        // 4. 开始面试
         const interview = await apiPost('/api/interview/start');
         console.log('面试开始:', interview.question);
         
-        // 6. 提交回答
+        // 5. 提交回答
         const nextQuestion = await apiPost('/api/interview/answer', {
             session_id: interview.session_id,
             answer: "这是我的回答"
@@ -152,19 +151,19 @@ async function completeInterviewFlow() {
 ```python
 import requests
 
-# 1. 上传简历
-with open('resume.pdf', 'rb') as f:
-    files = {'file': ('resume.pdf', f, 'application/pdf')}
-    response = requests.post('http://localhost:8000/api/resume/upload', files=files)
+# 1. 同时上传简历和岗位要求文件
+with open('resume.pdf', 'rb') as resume_file, open('job_requirement.txt', 'rb') as job_file:
+    files = {
+        'resume_file': ('resume.pdf', resume_file, 'application/pdf'),
+        'job_file': ('job_requirement.txt', job_file, 'text/plain')
+    }
+    response = requests.post('http://localhost:8000/upload', files=files)
 
-# 2. 加载岗位要求
-requests.post('http://localhost:8000/api/job/upload-requirement')
-
-# 3. 分析匹配度
+# 2. 分析匹配度
 match_result = requests.post('http://localhost:8000/api/match/analyze').json()
 print(f"匹配度: {match_result['match_report']['total_score']:.3f}")
 
-# 4. 开始面试
+# 3. 开始面试
 interview = requests.post('http://localhost:8000/api/interview/start').json()
 print(f"第一个问题: {interview['question']}")
 ```
@@ -198,8 +197,7 @@ AI-Recruitment-Analyzer/
 ├── app/
 │   ├── main.py               # FastAPI应用
 │   ├── api/                  # API路由层
-│   │   ├── resume.py         # 简历管理
-│   │   ├── job.py            # 岗位管理
+│   │   ├── main.py           # 文件上传和主路由
 │   │   ├── match.py          # 匹配分析
 │   │   └── interview.py      # 面试管理
 │   ├── services/             # 业务逻辑层

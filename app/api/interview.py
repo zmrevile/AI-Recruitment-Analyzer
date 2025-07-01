@@ -8,8 +8,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from app.models.interview import InterviewMessage, InterviewResponse, InterviewSession, InterviewStartRequest
 from app.config.settings import get_spark_config
 from app.services.enhanced_interview_generator import EnhancedInterviewGenerator
-from app.api.resume import get_resume_analyzer
-from app.api.job import get_job_analyzer
+from app.core.state_manager import get_resume_analyzer, get_job_analyzer
 from app.api.match import get_current_match_report
 
 

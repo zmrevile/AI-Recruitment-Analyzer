@@ -4,8 +4,7 @@
 from fastapi import APIRouter, HTTPException
 from app.config.settings import get_spark_config
 from app.services.resume_job_matcher import ResumeJobMatcher
-from app.api.resume import get_resume_analyzer
-from app.api.job import get_job_analyzer
+from app.core.state_manager import get_resume_analyzer, get_job_analyzer
 
 
 router = APIRouter(prefix="/api/match", tags=["匹配度分析"])
