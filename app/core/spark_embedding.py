@@ -243,6 +243,29 @@ class LocalEmbeddings:
             dummy_texts = ["预热文本", "warmup text", "模型初始化"]
             self.embed_documents(dummy_texts)
             spark_embedding_logger.info("✅ 模型预热完成")
+    
+    def preload(self):
+        """预加载模型 - 专用于应用启动"""
+        spark_embedding_logger.info("🚀 开始预加载embedding模型...")
+        
+        # 确保模型已初始化
+        if self.local_model is None:
+            self._init_local_model()
+        
+        # 执行预热
+        self.warmup()
+        
+        # 输出加载信息
+        stats = self.get_stats()
+        spark_embedding_logger.info(f"✅ Embedding模型预加载完成！")
+        spark_embedding_logger.info(f"📊 模型详情:")
+        spark_embedding_logger.info(f"   - 模型名称: {stats['model_name']}")
+        spark_embedding_logger.info(f"   - 向量维度: {stats['dimension']}")
+        spark_embedding_logger.info(f"   - 计算设备: {stats['device']}")
+        spark_embedding_logger.info(f"   - 缓存大小: {self.cache_size}")
+        spark_embedding_logger.info(f"   - 批处理大小: {self.batch_size}")
+        
+        return True
 
 
 # 向后兼容 - 重命名但保持接口一致
@@ -257,6 +280,15 @@ def get_embeddings() -> LocalEmbeddings:
     if _global_embeddings is None:
         _global_embeddings = LocalEmbeddings()
     return _global_embeddings
+
+def preload_embeddings() -> bool:
+    """预加载embedding模型 - 启动时调用"""
+    try:
+        embeddings = get_embeddings()
+        return embeddings.preload()
+    except Exception as e:
+        spark_embedding_logger.error(f"❌ 预加载embedding模型失败: {e}")
+        return False
 
 
 # 便捷函数
