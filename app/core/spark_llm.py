@@ -164,15 +164,20 @@ class SparkLLM(LLM):
                     "content": msg
                 })
         
+        # �� 生成唯一的会话ID，避免上下文记忆
+        timestamp = int(time.time() * 1000)
+        unique_uid = f"user_{timestamp}"
+        unique_chat_id = f"chat_{timestamp}"
+        
         data = {
             "header": {
                 "app_id": self.app_id,
-                "uid": "user_001"
+                "uid": unique_uid  # 🆕 使用唯一用户ID
             },
             "parameter": {
                 "chat": {  # 4.0 Ultra模型使用"chat"
                     "domain": self.domain,
-                    "chat_id": "chat_001",
+                    "chat_id": unique_chat_id,  # 🆕 使用唯一聊天ID
                     "temperature": self.temperature,
                     "max_tokens": self.max_tokens
                 }

@@ -5,7 +5,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from app.api import match, interview
 from datetime import datetime
 import os
-from app.core.state_manager import get_resume_analyzer, get_job_analyzer
+import shutil
+from app.core.state_manager import get_resume_analyzer, get_job_analyzer, reset_analyzers
+from app.api.match import reset_current_match_report
 
 
 # 创建主路由器
@@ -21,25 +23,25 @@ async def upload_files(
     resume_file: UploadFile = File(..., description="PDF格式简历文件"),
     job_file: UploadFile = File(..., description="TXT格式岗位要求文件")
 ):
-    """
-    同时上传简历和岗位要求文件
-    
-    Args:
-        resume_file: PDF格式简历文件
-        job_file: TXT格式岗位要求文件
-        
-    Returns:
-        简历和岗位分析结果
-    """
-    # 验证文件格式
+    """上传简历和岗位要求文件"""
     if not resume_file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="简历文件只支持PDF格式")
-    
     if not job_file.filename.endswith('.txt'):
         raise HTTPException(status_code=400, detail="岗位要求文件只支持TXT格式")
     
     try:
-        # 获取分析器实例
+        # 清理旧数据
+        reset_analyzers()
+        reset_current_match_report()
+        
+        # 静默清理向量数据库
+        for path in ["./chroma_db", "./chroma_db_job"]:
+            if os.path.exists(path):
+                try:
+                    shutil.rmtree(path)
+                except:
+                    pass
+        
         resume_analyzer = get_resume_analyzer()
         job_analyzer = get_job_analyzer()
         
@@ -52,32 +54,24 @@ async def upload_files(
             content = await resume_file.read()
             buffer.write(content)
         
-        resume_success = resume_analyzer.process_resume(resume_path)
-        if not resume_success:
+        if not resume_analyzer.process_resume(resume_path):
             raise HTTPException(status_code=500, detail="简历处理失败")
         
-        # 清理临时简历文件
-        os.remove(resume_path)
+        os.remove(resume_path)  # 清理临时文件
         
         # 处理岗位要求文件
         job_content = await job_file.read()
         job_text = job_content.decode('utf-8')
         
-        job_success = job_analyzer.process_job_content(job_text)
-        if not job_success:
+        if not job_analyzer.process_job_content(job_text):
             raise HTTPException(status_code=500, detail="岗位要求处理失败")
-        
-        # 获取分析结果
-        candidate_info = resume_analyzer.get_candidate_info()
-        job_info = job_analyzer.get_job_info()
-        job_summary = job_analyzer.get_job_summary()
         
         return {
             "status": "success",
-            "message": "简历和岗位要求上传分析成功",
-            "candidate_info": candidate_info,
-            "job_info": job_info,
-            "job_summary": job_summary,
+            "message": "文件上传分析成功",
+            "candidate_info": resume_analyzer.get_candidate_info(),
+            "job_info": job_analyzer.get_job_info(),
+            "job_summary": job_analyzer.get_job_summary(),
             "resume_processed": True,
             "job_processed": True
         }

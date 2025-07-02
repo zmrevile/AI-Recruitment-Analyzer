@@ -5,7 +5,7 @@ import os
 import chromadb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from app.core.spark_llm import SparkLLM
-from app.core.spark_embedding import SparkEmbeddings
+from app.core.spark_embedding import get_embeddings
 from langchain_core.messages import HumanMessage
 from langchain_community.vectorstores import Chroma
 from typing import Dict, List
@@ -17,7 +17,7 @@ from app.utils.json_helper import JSONHelper
 class JobAnalyzer:
     def __init__(self, spark_config: Dict):
         self.spark_config = spark_config
-        self.embeddings = SparkEmbeddings()
+        self.embeddings = get_embeddings()  # 使用优化后的单例模式
         self.llm = SparkLLM(
             app_id=spark_config.get("app_id", ""),
             api_key=spark_config.get("api_key", ""),

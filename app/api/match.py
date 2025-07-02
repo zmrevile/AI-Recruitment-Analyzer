@@ -23,13 +23,15 @@ async def analyze_resume_job_match():
     """
     global current_match_report
     
+    # 重置之前的匹配报告
+    current_match_report = None
+    
     resume_analyzer = get_resume_analyzer()
     job_analyzer = get_job_analyzer()
     
-    if resume_analyzer is None:
+    if not resume_analyzer:
         raise HTTPException(status_code=400, detail="请先上传简历")
-    
-    if job_analyzer is None:
+    if not job_analyzer:
         raise HTTPException(status_code=400, detail="请先加载岗位要求")
     
     try:
@@ -38,22 +40,16 @@ async def analyze_resume_job_match():
         
         # 获取简历信息
         candidate_info = resume_analyzer.get_candidate_info()
-        resume_skills = candidate_info.get("skills", [])
-        
-        # 获取岗位要求
         job_requirements = job_analyzer.get_job_info()
         
-        # 获取完整文本用于向量相似度计算
-        resume_full_text = resume_analyzer.get_resume_text() if hasattr(resume_analyzer, 'get_resume_text') else ""
-        job_full_text = job_analyzer.job_content if hasattr(job_analyzer, 'job_content') else ""
+        # 获取简历文本，优先使用原始内容
+        resume_text = getattr(resume_analyzer, 'resume_content', 
+                             resume_analyzer.get_resume_text() if hasattr(resume_analyzer, 'get_resume_text') else "")
+        job_text = getattr(job_analyzer, 'job_content', "")
         
-        # 获取岗位向量数据库
-        job_vector_store = job_analyzer.vector_store if hasattr(job_analyzer, 'vector_store') else None
-        
-        # 生成匹配度报告（简化版：向量相似度 + LLM分析）
+        # 生成匹配度报告
         match_report = job_matcher.generate_comprehensive_match_report(
-            candidate_info, job_requirements,
-            resume_full_text, job_full_text
+            candidate_info, job_requirements, resume_text, job_text
         )
         
         # 存储当前匹配报告，用于后续面试问题生成
@@ -73,4 +69,10 @@ async def analyze_resume_job_match():
 
 def get_current_match_report():
     """获取当前匹配报告"""
-    return current_match_report 
+    return current_match_report
+
+
+def reset_current_match_report():
+    """重置当前匹配报告"""
+    global current_match_report
+    current_match_report = None 

@@ -64,11 +64,12 @@ async def start_interview(request: InterviewStartRequest):
         interview_sessions[session_id] = session
         
         # 使用新的智能面试生成器生成第一个问题
+        # 第一个问题固定为自我介绍，不需要检索信息
         first_question_obj = enhanced_generator.generate_next_question(
             candidate_info, job_info, 
             conversation_history=[], 
             current_round=1,
-            resume_context=[],  # 第一个问题时没有历史回答，不需要检索
+            resume_context=[],  # 第一个问题不使用检索信息
             job_context=[]
         )
         first_question = first_question_obj["question"]
@@ -124,10 +125,17 @@ async def submit_answer(interview_msg: InterviewMessage):
         # 添加用户回答到对话历史
         session.conversation_history.append(AIMessage(content=interview_msg.message))
         
-        # 基于回答内容搜索相关简历信息
-        resume_context = resume_analyzer.search_resume_context(
-            interview_msg.message, k=3
-        )
+        # 智能检索策略：根据面试阶段和内容检索相关信息
+        if session.question_count == 1:
+            # 第一次回答后，主动检索项目信息以备后续使用
+            project_keywords = "项目经验 实践项目 开发经验 技术栈 项目成果"
+            resume_context = resume_analyzer.search_resume_context(project_keywords, k=3)
+            # 同时基于回答内容检索
+            answer_based_context = resume_analyzer.search_resume_context(interview_msg.message, k=2)
+            resume_context.extend(answer_based_context)
+        else:
+            # 后续回答基于回答内容检索
+            resume_context = resume_analyzer.search_resume_context(interview_msg.message, k=3)
         
         # 基于回答内容搜索相关岗位要求信息
         job_context = job_analyzer.search_job_context(
